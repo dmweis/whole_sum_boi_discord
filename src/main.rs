@@ -6,8 +6,7 @@ use log::*;
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
-    http::Http,
-    model::{channel::Message, gateway::Ready, id::ChannelId},
+    model::{channel::Message, gateway::Ready},
     prelude::*,
 };
 use simplelog::*;
@@ -70,16 +69,22 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn setup_logging() {
+    // only allow logs from our crate
+    // serenity is spammy
+    let config = ConfigBuilder::new()
+        .add_filter_allow_str("whole_sum_boi_discord")
+        .build();
+
     if TermLogger::init(
         LevelFilter::Info,
-        Config::default(),
+        config.clone(),
         TerminalMode::Mixed,
         ColorChoice::Auto,
     )
     .is_err()
     {
         eprintln!("Failed to create term logger");
-        if SimpleLogger::init(LevelFilter::Info, Config::default()).is_err() {
+        if SimpleLogger::init(LevelFilter::Info, config).is_err() {
             eprintln!("Failed to create simple logger");
         }
     }

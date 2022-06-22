@@ -29,6 +29,7 @@ pub fn get_configuration(config: Option<PathBuf>) -> Result<AppConfig, anyhow::E
 pub struct AppConfig {
     pub mqtt: MqttConfig,
     pub discord: DiscordConfig,
+    pub home: HomeSettings,
 }
 
 // weird serde default thing
@@ -50,4 +51,9 @@ pub struct MqttConfig {
 #[derive(Deserialize, Debug, Clone)]
 pub struct DiscordConfig {
     pub token: String,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct HomeSettings {
+    pub notification_discord_channel: u64,
 }

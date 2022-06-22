@@ -1,11 +1,13 @@
-use super::{router::Router, routes::SimpleHandler};
+use super::{
+    router::Router,
+    routes::{DoorSensorHandler, MotionSensorHandler},
+};
 use crate::configuration::AppConfig;
 use log::*;
 use rumqttc::{AsyncClient, Event, Incoming, MqttOptions, QoS};
 use serenity::http::Http;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::mpsc::unbounded_channel;
-use tokio::sync::Mutex;
 
 pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> anyhow::Result<()> {
     let mut mqttoptions = MqttOptions::new(
@@ -41,12 +43,29 @@ pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> any
     tokio::spawn(async move {
         let mut router = Router::default();
 
-        let simple_route = format!("{}/simple", base_topic);
+        // let simple_route = format!("{}/simple", base_topic);
+        let door_route = "zigbee2mqtt/main_door";
+        client.subscribe(door_route, QoS::AtMostOnce).await.unwrap();
+        router.add_handler(
+            door_route,
+            DoorSensorHandler::new(
+                discord_http.clone(),
+                app_config.home.notification_discord_channel,
+            ),
+        );
+
+        let motion_route = "zigbee2mqtt/motion_one";
         client
-            .subscribe(&simple_route, QoS::AtMostOnce)
+            .subscribe(motion_route, QoS::AtMostOnce)
             .await
             .unwrap();
-        router.add_handler(&simple_route, SimpleHandler::new());
+        router.add_handler(
+            motion_route,
+            MotionSensorHandler::new(
+                discord_http.clone(),
+                app_config.home.notification_discord_channel,
+            ),
+        );
 
         loop {
             let message = message_receiver.recv().await.unwrap();
