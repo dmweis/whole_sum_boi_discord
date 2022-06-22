@@ -28,14 +28,17 @@ pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> any
 
     tokio::spawn(async move {
         loop {
-            if let Ok(notification) = eventloop.poll().await {
-                if let Event::Incoming(Incoming::Publish(publish)) = notification {
-                    message_sender
-                        .send(publish)
-                        .expect("Failed to publish message");
+            match eventloop.poll().await {
+                Ok(notification) => {
+                    if let Event::Incoming(Incoming::Publish(publish)) = notification {
+                        if let Err(e) = message_sender.send(publish) {
+                            error!("Error sending message {}", e);
+                        }
+                    }
                 }
-            } else {
-                error!("failed processing mqtt notifications");
+                Err(e) => {
+                    error!("Error processing eventloop notifications {}", e);
+                }
             }
         }
     });
