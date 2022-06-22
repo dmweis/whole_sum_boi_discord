@@ -87,6 +87,9 @@
 <span id="82">82</span>
 <span id="83">83</span>
 <span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{
     <span class="ident">router::Router</span>,
     <span class="ident">routes</span>::{<span class="ident">DoorSensorHandler</span>, <span class="ident">MotionSensorHandler</span>},
@@ -117,14 +120,17 @@
 
     <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
         <span class="kw">loop</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">notification</span>) <span class="op">=</span> <span class="ident">eventloop</span>.<span class="ident">poll</span>().<span class="kw">await</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Event::Incoming</span>(<span class="ident">Incoming::Publish</span>(<span class="ident">publish</span>)) <span class="op">=</span> <span class="ident">notification</span> {
-                    <span class="ident">message_sender</span>
-                        .<span class="ident">send</span>(<span class="ident">publish</span>)
-                        .<span class="ident">expect</span>(<span class="string">&quot;Failed to publish message&quot;</span>);
+            <span class="kw">match</span> <span class="ident">eventloop</span>.<span class="ident">poll</span>().<span class="kw">await</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">notification</span>) =&gt; {
+                    <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Event::Incoming</span>(<span class="ident">Incoming::Publish</span>(<span class="ident">publish</span>)) <span class="op">=</span> <span class="ident">notification</span> {
+                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">message_sender</span>.<span class="ident">send</span>(<span class="ident">publish</span>) {
+                            <span class="macro">error!</span>(<span class="string">&quot;Error sending message {}&quot;</span>, <span class="ident">e</span>);
+                        }
+                    }
                 }
-            } <span class="kw">else</span> {
-                <span class="macro">error!</span>(<span class="string">&quot;failed processing mqtt notifications&quot;</span>);
+                <span class="prelude-val">Err</span>(<span class="ident">e</span>) =&gt; {
+                    <span class="macro">error!</span>(<span class="string">&quot;Error processing eventloop notifications {}&quot;</span>, <span class="ident">e</span>);
+                }
             }
         }
     });
