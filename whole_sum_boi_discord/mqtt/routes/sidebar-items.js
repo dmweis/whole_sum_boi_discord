@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["JsonData",""],["SimpleHandler",""]]});
+initSidebarItems({"struct":[["DoorSensor",""],["DoorSensorHandler",""],["MotionSensorData",""],["MotionSensorHandler",""]]});
