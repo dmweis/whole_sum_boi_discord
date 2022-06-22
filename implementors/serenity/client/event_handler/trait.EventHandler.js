@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["whole_sum_boi_discord"] = [{"text":"impl <a class=\"trait\" href=\"https://docs.rs/serenity/*/serenity/client/event_handler/trait.EventHandler.html\" title=\"trait serenity::client::event_handler::EventHandler\">EventHandler</a> for <a class=\"struct\" href=\"whole_sum_boi_discord/struct.Handler.html\" title=\"struct whole_sum_boi_discord::Handler\">Handler</a>","synthetic":false,"types":["whole_sum_boi_discord::Handler"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

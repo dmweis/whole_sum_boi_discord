@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["whole_sum_boi_discord"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.61.0/core/default/trait.Default.html\" title=\"trait core::default::Default\">Default</a> for <a class=\"struct\" href=\"whole_sum_boi_discord/mqtt/router/struct.Router.html\" title=\"struct whole_sum_boi_discord::mqtt::router::Router\">Router</a>","synthetic":false,"types":["whole_sum_boi_discord::mqtt::router::Router"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
