@@ -6,7 +6,7 @@ use log::*;
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
-    model::{channel::Message, gateway::Ready},
+    model::{channel::Message, gateway::Ready, id::ChannelId},
     prelude::*,
 };
 use simplelog::*;
@@ -58,6 +58,9 @@ async fn main() -> anyhow::Result<()> {
         .expect("Err creating client");
 
     let http = client.cache_and_http.http.clone();
+
+    let channel = ChannelId(app_config.home.notification_discord_channel);
+    channel.say(&http, "WholeSumBoi is online").await?;
 
     tokio::spawn(async move { start_mqtt_service(app_config, http) });
 
