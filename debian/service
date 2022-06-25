@@ -1,0 +1,15 @@
+[Unit]
+Description=WholeSumBoi
+After=network-online.target nss-lookup.target
+Wants=network-online.target
+
+[Service]
+User=whole_sum_boi
+DynamicUser=yes
+Type=simple
+Restart=on-failure
+RestartSec=5s
+ExecStart=/usr/bin/whole_sum_boi_discord --config /etc/whole_sum_boi/settings
+
+[Install]
+WantedBy=multi-user.target

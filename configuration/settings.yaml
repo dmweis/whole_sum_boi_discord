@@ -2,3 +2,7 @@ mqtt:
   base_route: "whole_sum_boi"
   broker_host: "homepi.local"
   client_id: "whole_sum_boi_test_instance"
+discord:
+  token: ""
+home:
+  notification_discord_channel: 0
