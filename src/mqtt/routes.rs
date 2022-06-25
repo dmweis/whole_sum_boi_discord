@@ -64,6 +64,7 @@ pub struct MotionSensorHandler {
 }
 
 impl MotionSensorHandler {
+    #[allow(dead_code)]
     pub fn new(discord: Arc<Http>, discord_channel_id: u64) -> Box<Self> {
         Box::new(Self {
             discord,

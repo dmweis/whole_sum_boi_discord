@@ -1,4 +1,4 @@
-use super::routes::{DoorSensorHandler, MotionSensorHandler, SwitchHandler};
+use super::routes::{DoorSensorHandler, SwitchHandler};
 use crate::configuration::AppConfig;
 use log::*;
 use mqtt_router::Router;
