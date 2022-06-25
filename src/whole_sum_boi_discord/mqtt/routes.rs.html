@@ -171,6 +171,7 @@
 <span id="166">166</span>
 <span id="167">167</span>
 <span id="168">168</span>
+<span id="169">169</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">async_trait::async_trait</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">mqtt_router</span>::{<span class="ident">RouteHandler</span>, <span class="ident">RouterError</span>};
@@ -237,6 +238,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">MotionSensorHandler</span> {
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">discord</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Http</span><span class="op">&gt;</span>, <span class="ident">discord_channel_id</span>: <span class="ident">u64</span>) -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="ident">Box::new</span>(<span class="self">Self</span> {
             <span class="ident">discord</span>,
