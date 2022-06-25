@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["mqtt_server",""],["router",""],["routes",""]]});
+initSidebarItems({"mod":[["mqtt_server",""],["routes",""]]});

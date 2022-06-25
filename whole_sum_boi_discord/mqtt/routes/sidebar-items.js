@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["DoorSensor",""],["DoorSensorHandler",""],["MotionSensorData",""],["MotionSensorHandler",""]]});
+initSidebarItems({"enum":[["Action",""]],"struct":[["DoorSensor",""],["DoorSensorHandler",""],["MotionSensorData",""],["MotionSensorHandler",""],["SwitchHandler",""],["SwitchPayload",""]]});
