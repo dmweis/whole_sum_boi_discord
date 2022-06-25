@@ -1,6 +1,6 @@
 [package]
 name = "whole_sum_boi_discord"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
@@ -23,3 +23,4 @@ thiserror = "1.0"
 anyhow = "1.0"
 async-trait = "0.1"
 structopt = "0.3"
+mqtt-router = { git = "https://github.com/dmweis/mqtt-router", branch = "main" }

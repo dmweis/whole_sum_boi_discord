@@ -594,6 +594,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "mqtt-router"
+version = "0.1.0"
+source = "git+https://github.com/dmweis/mqtt-router?branch=main#f476aaea7ef2c0c620acf0403ab90b8591fc627e"
+dependencies = [
+ "async-trait",
+ "thiserror",
+]
+
+[[package]]
 name = "nanorand"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1588,12 +1597,13 @@ dependencies = [
 
 [[package]]
 name = "whole_sum_boi_discord"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "async-trait",
  "config",
  "log",
+ "mqtt-router",
  "rumqttc",
  "serde 1.0.137",
  "serde_json",

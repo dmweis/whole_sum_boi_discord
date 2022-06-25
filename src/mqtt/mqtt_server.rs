@@ -1,13 +1,16 @@
-use super::{
-    router::Router,
-    routes::{DoorSensorHandler, MotionSensorHandler},
-};
+use super::routes::{DoorSensorHandler, MotionSensorHandler, SwitchHandler};
 use crate::configuration::AppConfig;
 use log::*;
-use rumqttc::{AsyncClient, Event, Incoming, MqttOptions, QoS};
+use mqtt_router::Router;
+use rumqttc::{AsyncClient, ConnAck, Event, Incoming, MqttOptions, Publish, QoS, SubscribeFilter};
 use serenity::http::Http;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::mpsc::unbounded_channel;
+
+enum MqttUpdate {
+    Message(Publish),
+    Reconnection(ConnAck),
+}
 
 pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> anyhow::Result<()> {
     let mut mqttoptions = MqttOptions::new(
@@ -29,15 +32,21 @@ pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> any
     tokio::spawn(async move {
         loop {
             match eventloop.poll().await {
-                Ok(notification) => {
-                    if let Event::Incoming(Incoming::Publish(publish)) = notification {
-                        if let Err(e) = message_sender.send(publish) {
-                            error!("Error sending message {}", e);
+                Ok(notification) => match notification {
+                    Event::Incoming(Incoming::Publish(publish)) => {
+                        if let Err(e) = message_sender.send(MqttUpdate::Message(publish)) {
+                            eprintln!("Error sending message {}", e);
                         }
                     }
-                }
+                    Event::Incoming(Incoming::ConnAck(con_ack)) => {
+                        if let Err(e) = message_sender.send(MqttUpdate::Reconnection(con_ack)) {
+                            eprintln!("Error sending message {}", e);
+                        }
+                    }
+                    _ => (),
+                },
                 Err(e) => {
-                    error!("Error processing eventloop notifications {}", e);
+                    eprintln!("Error processing eventloop notifications {}", e);
                 }
             }
         }
@@ -46,39 +55,57 @@ pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> any
     tokio::spawn(async move {
         let mut router = Router::default();
 
-        // let simple_route = format!("{}/simple", base_topic);
-        let door_route = "zigbee2mqtt/main_door";
-        client.subscribe(door_route, QoS::AtMostOnce).await.unwrap();
-        router.add_handler(
-            door_route,
-            DoorSensorHandler::new(
-                discord_http.clone(),
-                app_config.home.notification_discord_channel,
-            ),
-        );
-
-        let motion_route = "zigbee2mqtt/motion_one";
-        client
-            .subscribe(motion_route, QoS::AtMostOnce)
-            .await
+        router
+            .add_handler(
+                "zigbee2mqtt/main_door",
+                DoorSensorHandler::new(
+                    discord_http.clone(),
+                    app_config.home.notification_discord_channel,
+                ),
+            )
             .unwrap();
-        router.add_handler(
-            motion_route,
-            MotionSensorHandler::new(
-                discord_http.clone(),
-                app_config.home.notification_discord_channel,
-            ),
-        );
+
+        router
+            .add_handler(
+                "zigbee2mqtt/switch/#",
+                SwitchHandler::new(
+                    discord_http.clone(),
+                    app_config.home.notification_discord_channel,
+                ),
+            )
+            .unwrap();
+
+        let topics = router
+            .topics_for_subscription()
+            .map(|topic| SubscribeFilter {
+                path: topic.to_owned(),
+                qos: QoS::AtMostOnce,
+            });
+        client.subscribe_many(topics).await.unwrap();
 
         loop {
-            let message = message_receiver.recv().await.unwrap();
-            match router
-                .handle_message(message.topic.clone(), &message.payload)
-                .await
-            {
-                Ok(false) => error!("No handler for topic: \"{}\"", &message.topic),
-                Ok(true) => (),
-                Err(e) => error!("Failed running handler with {:?}", e),
+            let update = message_receiver.recv().await.unwrap();
+            match update {
+                MqttUpdate::Message(message) => {
+                    match router
+                        .handle_message_ignore_errors(&message.topic, &message.payload)
+                        .await
+                    {
+                        Ok(false) => error!("No handler for topic: \"{}\"", &message.topic),
+                        Ok(true) => (),
+                        Err(e) => error!("Failed running handler with {:?}", e),
+                    }
+                }
+                MqttUpdate::Reconnection(_) => {
+                    info!("Reconnecting to broker");
+                    let topics = router
+                        .topics_for_subscription()
+                        .map(|topic| SubscribeFilter {
+                            path: topic.to_owned(),
+                            qos: QoS::AtMostOnce,
+                        });
+                    client.subscribe_many(topics).await.unwrap();
+                }
             }
         }
     });
