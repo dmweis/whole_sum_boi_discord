@@ -1,1 +1,1 @@
-initSidebarItems({"fn":[["main",""],["setup_logging",""]],"mod":[["configuration",""],["mqtt",""]],"struct":[["Handler",""],["Opts",""]]});
+initSidebarItems({"fn":[["main",""],["setup_logging",""]],"mod":[["configuration",""],["mqtt",""]],"struct":[["DiscordMessageHandler",""],["Opts",""]]});

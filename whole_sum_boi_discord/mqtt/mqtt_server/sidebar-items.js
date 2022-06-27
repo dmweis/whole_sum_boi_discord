@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["MqttUpdate",""]],"fn":[["start_mqtt_service",""]]});
+initSidebarItems({"enum":[["MqttUpdate",""]],"fn":[["start_mqtt_service",""]],"struct":[["ReceivedDiscordMessage","Simplified representation of message for use over mqtt"]]});

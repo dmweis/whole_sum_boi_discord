@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Action",""]],"struct":[["DoorSensor",""],["DoorSensorHandler",""],["MotionSensorData",""],["MotionSensorHandler",""],["SwitchHandler",""],["SwitchPayload",""]]});
+initSidebarItems({"enum":[["Action",""]],"struct":[["DiscordChannelMessageHandler",""],["DiscordMessageToChannel",""],["DoorSensor",""],["DoorSensorHandler",""],["MotionSensorData",""],["MotionSensorHandler",""],["SwitchHandler",""],["SwitchPayload",""]]});

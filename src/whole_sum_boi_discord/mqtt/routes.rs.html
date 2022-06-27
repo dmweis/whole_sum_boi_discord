@@ -172,6 +172,37 @@
 <span id="167">167</span>
 <span id="168">168</span>
 <span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">async_trait::async_trait</span>;
 <span class="kw">use</span> <span class="ident">log</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">mqtt_router</span>::{<span class="ident">RouteHandler</span>, <span class="ident">RouterError</span>};
@@ -181,14 +212,14 @@
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DoorSensorHandler</span> {
     <span class="ident">discord</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Http</span><span class="op">&gt;</span>,
-    <span class="ident">discord_channel_id</span>: <span class="ident">u64</span>,
+    <span class="ident">discord_channel</span>: <span class="ident">ChannelId</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">DoorSensorHandler</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">discord</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Http</span><span class="op">&gt;</span>, <span class="ident">discord_channel_id</span>: <span class="ident">u64</span>) -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="ident">Box::new</span>(<span class="self">Self</span> {
             <span class="ident">discord</span>,
-            <span class="ident">discord_channel_id</span>,
+            <span class="ident">discord_channel</span>: <span class="ident">ChannelId</span>(<span class="ident">discord_channel_id</span>),
         })
     }
 }
@@ -200,14 +231,13 @@
         <span class="kw">let</span> <span class="ident">door_sensor</span>: <span class="ident">DoorSensor</span> <span class="op">=</span>
             <span class="ident">serde_json::from_slice</span>(<span class="ident">content</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RouterError::HandlerError</span>(<span class="ident">e</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">channel</span> <span class="op">=</span> <span class="ident">ChannelId</span>(<span class="self">self</span>.<span class="ident">discord_channel_id</span>);
         <span class="kw">if</span> <span class="ident">door_sensor</span>.<span class="ident">contact</span> {
-            <span class="ident">channel</span>
+            <span class="self">self</span>.<span class="ident">discord_channel</span>
                 .<span class="ident">say</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">discord</span>, <span class="string">&quot;Front door was closed&quot;</span>)
                 .<span class="kw">await</span>
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RouterError::HandlerError</span>(<span class="ident">e</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
         } <span class="kw">else</span> {
-            <span class="ident">channel</span>
+            <span class="self">self</span>.<span class="ident">discord_channel</span>
                 .<span class="ident">say</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">discord</span>, <span class="string">&quot;Front door was opened&quot;</span>)
                 .<span class="kw">await</span>
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RouterError::HandlerError</span>(<span class="ident">e</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
@@ -234,7 +264,7 @@
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MotionSensorHandler</span> {
     <span class="ident">discord</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Http</span><span class="op">&gt;</span>,
-    <span class="ident">discord_channel_id</span>: <span class="ident">u64</span>,
+    <span class="ident">discord_channel</span>: <span class="ident">ChannelId</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">MotionSensorHandler</span> {
@@ -242,7 +272,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">discord</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Http</span><span class="op">&gt;</span>, <span class="ident">discord_channel_id</span>: <span class="ident">u64</span>) -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="ident">Box::new</span>(<span class="self">Self</span> {
             <span class="ident">discord</span>,
-            <span class="ident">discord_channel_id</span>,
+            <span class="ident">discord_channel</span>: <span class="ident">ChannelId</span>(<span class="ident">discord_channel_id</span>),
         })
     }
 }
@@ -254,14 +284,13 @@
         <span class="kw">let</span> <span class="ident">motion_sensor</span>: <span class="ident">MotionSensorData</span> <span class="op">=</span>
             <span class="ident">serde_json::from_slice</span>(<span class="ident">content</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RouterError::HandlerError</span>(<span class="ident">e</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">channel</span> <span class="op">=</span> <span class="ident">ChannelId</span>(<span class="self">self</span>.<span class="ident">discord_channel_id</span>);
         <span class="kw">if</span> <span class="ident">motion_sensor</span>.<span class="ident">occupancy</span> {
-            <span class="ident">channel</span>
+            <span class="self">self</span>.<span class="ident">discord_channel</span>
                 .<span class="ident">say</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">discord</span>, <span class="string">&quot;Motion sensor detected motion&quot;</span>)
                 .<span class="kw">await</span>
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RouterError::HandlerError</span>(<span class="ident">e</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
         } <span class="kw">else</span> {
-            <span class="ident">channel</span>
+            <span class="self">self</span>.<span class="ident">discord_channel</span>
                 .<span class="ident">say</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">discord</span>, <span class="string">&quot;Motion sensors not detecting any motion&quot;</span>)
                 .<span class="kw">await</span>
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RouterError::HandlerError</span>(<span class="ident">e</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
@@ -288,14 +317,14 @@
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SwitchHandler</span> {
     <span class="ident">discord</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Http</span><span class="op">&gt;</span>,
-    <span class="ident">discord_channel_id</span>: <span class="ident">u64</span>,
+    <span class="ident">discord_channel</span>: <span class="ident">ChannelId</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">SwitchHandler</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">discord</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Http</span><span class="op">&gt;</span>, <span class="ident">discord_channel_id</span>: <span class="ident">u64</span>) -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         <span class="ident">Box::new</span>(<span class="self">Self</span> {
             <span class="ident">discord</span>,
-            <span class="ident">discord_channel_id</span>,
+            <span class="ident">discord_channel</span>: <span class="ident">ChannelId</span>(<span class="ident">discord_channel_id</span>),
         })
     }
 }
@@ -314,8 +343,7 @@
             <span class="ident">Action::Double</span> =&gt; <span class="macro">format!</span>(<span class="string">&quot;switch {switch_name} was double clicked&quot;</span>),
         };
 
-        <span class="kw">let</span> <span class="ident">channel</span> <span class="op">=</span> <span class="ident">ChannelId</span>(<span class="self">self</span>.<span class="ident">discord_channel_id</span>);
-        <span class="ident">channel</span>
+        <span class="self">self</span>.<span class="ident">discord_channel</span>
             .<span class="ident">say</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">discord</span>, <span class="kw-2">&amp;</span><span class="ident">message</span>)
             .<span class="kw">await</span>
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RouterError::HandlerError</span>(<span class="ident">e</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
@@ -340,6 +368,40 @@
     <span class="kw">pub</span> <span class="ident">linkquality</span>: <span class="ident">f32</span>,
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
     <span class="kw">pub</span> <span class="ident">voltage</span>: <span class="ident">f32</span>,
+}
+
+<span class="comment">// discord stuff</span>
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DiscordChannelMessageHandler</span> {
+    <span class="ident">discord_http</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Http</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">DiscordChannelMessageHandler</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">discord_http</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Http</span><span class="op">&gt;</span>) -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="ident">Box::new</span>(<span class="self">Self</span> { <span class="ident">discord_http</span> })
+    }
+}
+
+<span class="attribute">#[<span class="ident">async_trait</span>]</span>
+<span class="kw">impl</span> <span class="ident">RouteHandler</span> <span class="kw">for</span> <span class="ident">DiscordChannelMessageHandler</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">call</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">_topic</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">content</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span>(), <span class="ident">RouterError</span><span class="op">&gt;</span> {
+        <span class="macro">info!</span>(<span class="string">&quot;Handling discord send request&quot;</span>);
+        <span class="kw">let</span> <span class="ident">message_data</span>: <span class="ident">DiscordMessageToChannel</span> <span class="op">=</span>
+            <span class="ident">serde_json::from_slice</span>(<span class="ident">content</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">RouterError::HandlerError</span>(<span class="ident">err</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+
+        <span class="kw">let</span> <span class="ident">channel</span> <span class="op">=</span> <span class="ident">ChannelId</span>(<span class="ident">message_data</span>.<span class="ident">channel_id</span>);
+        <span class="ident">channel</span>
+            .<span class="ident">say</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">discord_http</span>, <span class="kw-2">&amp;</span><span class="ident">message_data</span>.<span class="ident">content</span>)
+            .<span class="kw">await</span>
+            .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">RouterError::HandlerError</span>(<span class="ident">e</span>.<span class="ident">into</span>()))<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(())
+    }
+}
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Deserialize</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DiscordMessageToChannel</span> {
+    <span class="ident">channel_id</span>: <span class="ident">u64</span>,
+    <span class="ident">content</span>: <span class="ident">String</span>,
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="whole_sum_boi_discord" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.61.0 (fe5b13d68 2022-05-18)" ></div>

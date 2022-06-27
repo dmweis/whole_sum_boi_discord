@@ -97,6 +97,18 @@
 <span id="92">92</span>
 <span id="93">93</span>
 <span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
 </pre><pre class="rust"><code><span class="kw">mod</span> <span class="ident">configuration</span>;
 <span class="kw">mod</span> <span class="ident">mqtt</span>;
 
@@ -111,17 +123,27 @@
 <span class="kw">use</span> <span class="ident">simplelog</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">std::path::PathBuf</span>;
 <span class="kw">use</span> <span class="ident">structopt::StructOpt</span>;
+<span class="kw">use</span> <span class="ident">tokio::sync::mpsc</span>::{<span class="ident">unbounded_channel</span>, <span class="ident">UnboundedSender</span>};
 
-<span class="kw">struct</span> <span class="ident">Handler</span>;
+<span class="kw">struct</span> <span class="ident">DiscordMessageHandler</span> {
+    <span class="ident">message_sender</span>: <span class="ident">UnboundedSender</span><span class="op">&lt;</span><span class="ident">Message</span><span class="op">&gt;</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">DiscordMessageHandler</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">message_sender</span>: <span class="ident">UnboundedSender</span><span class="op">&lt;</span><span class="ident">Message</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
+        <span class="self">Self</span> { <span class="ident">message_sender</span> }
+    }
+}
 
 <span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">EventHandler</span> <span class="kw">for</span> <span class="ident">Handler</span> {
+<span class="kw">impl</span> <span class="ident">EventHandler</span> <span class="kw">for</span> <span class="ident">DiscordMessageHandler</span> {
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">message</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ctx</span>: <span class="ident">Context</span>, <span class="ident">msg</span>: <span class="ident">Message</span>) {
         <span class="kw">if</span> <span class="ident">msg</span>.<span class="ident">content</span>.<span class="ident">to_ascii_lowercase</span>() <span class="op">==</span> <span class="string">&quot;ping&quot;</span> {
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">why</span>) <span class="op">=</span> <span class="ident">msg</span>.<span class="ident">channel_id</span>.<span class="ident">say</span>(<span class="kw-2">&amp;</span><span class="ident">ctx</span>.<span class="ident">http</span>, <span class="string">&quot;Pong!&quot;</span>).<span class="kw">await</span> {
                 <span class="macro">error!</span>(<span class="string">&quot;Error sending message: {:?}&quot;</span>, <span class="ident">why</span>);
             }
         }
+        <span class="self">self</span>.<span class="ident">message_sender</span>.<span class="ident">send</span>(<span class="ident">msg</span>).<span class="ident">unwrap</span>();
     }
 
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">ready</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: <span class="ident">Context</span>, <span class="ident">ready</span>: <span class="ident">Ready</span>) {
@@ -151,8 +173,10 @@
         <span class="op">|</span> <span class="ident">GatewayIntents::DIRECT_MESSAGES</span>
         <span class="op">|</span> <span class="ident">GatewayIntents::MESSAGE_CONTENT</span>;
 
+    <span class="kw">let</span> (<span class="ident">sender</span>, <span class="ident">receiver</span>) <span class="op">=</span> <span class="ident">unbounded_channel</span>();
+
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Client::builder</span>(<span class="kw-2">&amp;</span><span class="ident">app_config</span>.<span class="ident">discord</span>.<span class="ident">token</span>, <span class="ident">intents</span>)
-        .<span class="ident">event_handler</span>(<span class="ident">Handler</span>)
+        .<span class="ident">event_handler</span>(<span class="ident">DiscordMessageHandler::new</span>(<span class="ident">sender</span>))
         .<span class="kw">await</span>
         .<span class="ident">expect</span>(<span class="string">&quot;Err creating client&quot;</span>);
 
@@ -161,7 +185,7 @@
     <span class="kw">let</span> <span class="ident">channel</span> <span class="op">=</span> <span class="ident">ChannelId</span>(<span class="ident">app_config</span>.<span class="ident">home</span>.<span class="ident">notification_discord_channel</span>);
     <span class="ident">channel</span>.<span class="ident">say</span>(<span class="kw-2">&amp;</span><span class="ident">http</span>, <span class="string">&quot;WholeSumBoi is online&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> { <span class="ident">start_mqtt_service</span>(<span class="ident">app_config</span>, <span class="ident">http</span>) });
+    <span class="ident">start_mqtt_service</span>(<span class="ident">app_config</span>, <span class="ident">http</span>, <span class="ident">receiver</span>)<span class="question-mark">?</span>;
 
     <span class="macro">info!</span>(<span class="string">&quot;Starting discord client&quot;</span>);
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">why</span>) <span class="op">=</span> <span class="ident">client</span>.<span class="ident">start</span>().<span class="kw">await</span> {
