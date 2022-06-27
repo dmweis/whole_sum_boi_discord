@@ -33,6 +33,8 @@ pub fn start_mqtt_service(
 
     let base_topic = app_config.mqtt.base_route;
 
+    info!("MQTT base topic {}", base_topic);
+
     tokio::spawn({
         let mqtt_client = client.clone();
         let topic = format!("{base_topic}/new_message/v1");
@@ -40,16 +42,17 @@ pub fn start_mqtt_service(
             loop {
                 let message = message_receiver.recv().await.unwrap();
                 let mqtt_payload: ReceivedDiscordMessage = message.into();
-                let json = serde_json::to_string(&mqtt_payload).unwrap();
-                mqtt_client
+                let json =
+                    serde_json::to_string(&mqtt_payload).expect("Failed to serialize message");
+                if let Err(e) = mqtt_client
                     .publish(&topic, QoS::AtMostOnce, false, json)
                     .await
-                    .unwrap();
+                {
+                    error!("Failed sending mqtt message {e}");
+                }
             }
         }
     });
-
-    info!("MQTT base topic {}", base_topic);
 
     let (message_sender, mut message_receiver) = unbounded_channel();
 
