@@ -47,3 +47,4 @@ anyhow = "1.0"
 async-trait = "0.1"
 structopt = "0.3"
 mqtt-router = { git = "https://github.com/dmweis/mqtt-router", branch = "main" }
+# crossbeam = "0.8.1"

@@ -6,3 +6,4 @@ discord:
   token: ""
 home:
   notification_discord_channel: 0
+  spam_channel_id: 0

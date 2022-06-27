@@ -56,4 +56,5 @@ pub struct DiscordConfig {
 #[derive(Deserialize, Debug, Clone)]
 pub struct HomeSettings {
     pub notification_discord_channel: u64,
+    pub spam_channel_id: u64,
 }

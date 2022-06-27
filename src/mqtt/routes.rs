@@ -7,14 +7,14 @@ use std::sync::Arc;
 
 pub struct DoorSensorHandler {
     discord: Arc<Http>,
-    discord_channel_id: u64,
+    discord_channel: ChannelId,
 }
 
 impl DoorSensorHandler {
     pub fn new(discord: Arc<Http>, discord_channel_id: u64) -> Box<Self> {
         Box::new(Self {
             discord,
-            discord_channel_id,
+            discord_channel: ChannelId(discord_channel_id),
         })
     }
 }
@@ -26,14 +26,13 @@ impl RouteHandler for DoorSensorHandler {
         let door_sensor: DoorSensor =
             serde_json::from_slice(content).map_err(|e| RouterError::HandlerError(e.into()))?;
 
-        let channel = ChannelId(self.discord_channel_id);
         if door_sensor.contact {
-            channel
+            self.discord_channel
                 .say(&self.discord, "Front door was closed")
                 .await
                 .map_err(|e| RouterError::HandlerError(e.into()))?;
         } else {
-            channel
+            self.discord_channel
                 .say(&self.discord, "Front door was opened")
                 .await
                 .map_err(|e| RouterError::HandlerError(e.into()))?;
@@ -60,7 +59,7 @@ pub struct DoorSensor {
 
 pub struct MotionSensorHandler {
     discord: Arc<Http>,
-    discord_channel_id: u64,
+    discord_channel: ChannelId,
 }
 
 impl MotionSensorHandler {
@@ -68,7 +67,7 @@ impl MotionSensorHandler {
     pub fn new(discord: Arc<Http>, discord_channel_id: u64) -> Box<Self> {
         Box::new(Self {
             discord,
-            discord_channel_id,
+            discord_channel: ChannelId(discord_channel_id),
         })
     }
 }
@@ -80,14 +79,13 @@ impl RouteHandler for MotionSensorHandler {
         let motion_sensor: MotionSensorData =
             serde_json::from_slice(content).map_err(|e| RouterError::HandlerError(e.into()))?;
 
-        let channel = ChannelId(self.discord_channel_id);
         if motion_sensor.occupancy {
-            channel
+            self.discord_channel
                 .say(&self.discord, "Motion sensor detected motion")
                 .await
                 .map_err(|e| RouterError::HandlerError(e.into()))?;
         } else {
-            channel
+            self.discord_channel
                 .say(&self.discord, "Motion sensors not detecting any motion")
                 .await
                 .map_err(|e| RouterError::HandlerError(e.into()))?;
@@ -114,14 +112,14 @@ struct MotionSensorData {
 
 pub struct SwitchHandler {
     discord: Arc<Http>,
-    discord_channel_id: u64,
+    discord_channel: ChannelId,
 }
 
 impl SwitchHandler {
     pub fn new(discord: Arc<Http>, discord_channel_id: u64) -> Box<Self> {
         Box::new(Self {
             discord,
-            discord_channel_id,
+            discord_channel: ChannelId(discord_channel_id),
         })
     }
 }
@@ -140,8 +138,7 @@ impl RouteHandler for SwitchHandler {
             Action::Double => format!("switch {switch_name} was double clicked"),
         };
 
-        let channel = ChannelId(self.discord_channel_id);
-        channel
+        self.discord_channel
             .say(&self.discord, &message)
             .await
             .map_err(|e| RouterError::HandlerError(e.into()))?;
@@ -166,4 +163,38 @@ pub struct SwitchPayload {
     pub linkquality: f32,
     #[allow(dead_code)]
     pub voltage: f32,
+}
+
+// discord stuff
+
+pub struct DiscordChannelMessageHandler {
+    discord_http: Arc<Http>,
+}
+
+impl DiscordChannelMessageHandler {
+    pub fn new(discord_http: Arc<Http>) -> Box<Self> {
+        Box::new(Self { discord_http })
+    }
+}
+
+#[async_trait]
+impl RouteHandler for DiscordChannelMessageHandler {
+    async fn call(&mut self, _topic: &str, content: &[u8]) -> std::result::Result<(), RouterError> {
+        info!("Handling discord send request");
+        let message_data: DiscordMessageToChannel =
+            serde_json::from_slice(content).map_err(|err| RouterError::HandlerError(err.into()))?;
+
+        let channel = ChannelId(message_data.channel_id);
+        channel
+            .say(&self.discord_http, &message_data.content)
+            .await
+            .map_err(|e| RouterError::HandlerError(e.into()))?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DiscordMessageToChannel {
+    channel_id: u64,
+    content: String,
 }

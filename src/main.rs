@@ -12,17 +12,27 @@ use serenity::{
 use simplelog::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 
-struct Handler;
+struct DiscordMessageHandler {
+    message_sender: UnboundedSender<Message>,
+}
+
+impl DiscordMessageHandler {
+    pub fn new(message_sender: UnboundedSender<Message>) -> Self {
+        Self { message_sender }
+    }
+}
 
 #[async_trait]
-impl EventHandler for Handler {
+impl EventHandler for DiscordMessageHandler {
     async fn message(&self, ctx: Context, msg: Message) {
         if msg.content.to_ascii_lowercase() == "ping" {
             if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
                 error!("Error sending message: {:?}", why);
             }
         }
+        self.message_sender.send(msg).unwrap();
     }
 
     async fn ready(&self, _: Context, ready: Ready) {
@@ -52,8 +62,10 @@ async fn main() -> anyhow::Result<()> {
         | GatewayIntents::DIRECT_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT;
 
+    let (sender, receiver) = unbounded_channel();
+
     let mut client = Client::builder(&app_config.discord.token, intents)
-        .event_handler(Handler)
+        .event_handler(DiscordMessageHandler::new(sender))
         .await
         .expect("Err creating client");
 
@@ -62,7 +74,7 @@ async fn main() -> anyhow::Result<()> {
     let channel = ChannelId(app_config.home.notification_discord_channel);
     channel.say(&http, "WholeSumBoi is online").await?;
 
-    tokio::spawn(async move { start_mqtt_service(app_config, http) });
+    start_mqtt_service(app_config, http, receiver)?;
 
     info!("Starting discord client");
     if let Err(why) = client.start().await {

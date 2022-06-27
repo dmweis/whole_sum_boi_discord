@@ -1,18 +1,26 @@
-use super::routes::{DoorSensorHandler, SwitchHandler};
+use super::routes::{
+    DiscordChannelMessageHandler, DoorSensorHandler, MotionSensorHandler, SwitchHandler,
+};
 use crate::configuration::AppConfig;
 use log::*;
 use mqtt_router::Router;
 use rumqttc::{AsyncClient, ConnAck, Event, Incoming, MqttOptions, Publish, QoS, SubscribeFilter};
+use serde::Serialize;
 use serenity::http::Http;
+use serenity::model::channel::Message;
 use std::{sync::Arc, time::Duration};
-use tokio::sync::mpsc::unbounded_channel;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
 enum MqttUpdate {
     Message(Publish),
     Reconnection(ConnAck),
 }
 
-pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> anyhow::Result<()> {
+pub fn start_mqtt_service(
+    app_config: AppConfig,
+    discord_http: Arc<Http>,
+    mut message_receiver: UnboundedReceiver<Message>,
+) -> anyhow::Result<()> {
     let mut mqttoptions = MqttOptions::new(
         &app_config.mqtt.client_id,
         &app_config.mqtt.broker_host,
@@ -24,6 +32,22 @@ pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> any
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 
     let base_topic = app_config.mqtt.base_route;
+
+    tokio::spawn({
+        let mqtt_client = client.clone();
+        let topic = format!("{base_topic}/new_message/v1");
+        async move {
+            loop {
+                let message = message_receiver.recv().await.unwrap();
+                let mqtt_payload: ReceivedDiscordMessage = message.into();
+                let json = serde_json::to_string(&mqtt_payload).unwrap();
+                mqtt_client
+                    .publish(&topic, QoS::AtMostOnce, false, json)
+                    .await
+                    .unwrap();
+            }
+        }
+    });
 
     info!("MQTT base topic {}", base_topic);
 
@@ -58,20 +82,28 @@ pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> any
         router
             .add_handler(
                 "zigbee2mqtt/main_door",
-                DoorSensorHandler::new(
-                    discord_http.clone(),
-                    app_config.home.notification_discord_channel,
-                ),
+                DoorSensorHandler::new(discord_http.clone(), app_config.home.spam_channel_id),
             )
             .unwrap();
 
         router
             .add_handler(
                 "zigbee2mqtt/switch/#",
-                SwitchHandler::new(
-                    discord_http.clone(),
-                    app_config.home.notification_discord_channel,
-                ),
+                SwitchHandler::new(discord_http.clone(), app_config.home.spam_channel_id),
+            )
+            .unwrap();
+
+        router
+            .add_handler(
+                "zigbee2mqtt/motion/#",
+                MotionSensorHandler::new(discord_http.clone(), app_config.home.spam_channel_id),
+            )
+            .unwrap();
+
+        router
+            .add_handler(
+                &format!("{base_topic}/say_channel"),
+                DiscordChannelMessageHandler::new(discord_http.clone()),
             )
             .unwrap();
 
@@ -111,4 +143,26 @@ pub fn start_mqtt_service(app_config: AppConfig, discord_http: Arc<Http>) -> any
     });
 
     Ok(())
+}
+
+/// Simplified representation of message for use over mqtt
+#[derive(Debug, Serialize)]
+struct ReceivedDiscordMessage {
+    message_id: u64,
+    author_id: u64,
+    is_author_bot: bool,
+    channel_id: u64,
+    content: String,
+}
+
+impl From<Message> for ReceivedDiscordMessage {
+    fn from(message: Message) -> Self {
+        Self {
+            message_id: message.id.0,
+            author_id: message.author.id.0,
+            is_author_bot: message.author.bot,
+            channel_id: message.channel_id.0,
+            content: message.content,
+        }
+    }
 }
