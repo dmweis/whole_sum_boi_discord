@@ -7,7 +7,7 @@ name = "whole_sum_boi_discord"
 publish = false
 readme = "README.md"
 repository = "https://github.com/dmweis/whole_sum_boi_discord"
-version = "0.2.1"
+version = "0.2.2"
 
 [package.metadata.deb]
 assets = [
@@ -31,7 +31,7 @@ maintainer-scripts = "debian/"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-config = "0.11"
+config = "0.13"
 log = "0.4"
 mqtt-router = {git = "https://github.com/dmweis/mqtt-router", branch = "main"}
 rumqttc = "0.13.0"

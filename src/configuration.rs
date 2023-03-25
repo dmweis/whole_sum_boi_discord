@@ -4,25 +4,27 @@ use std::{path::PathBuf, str};
 
 /// Use default config if no path is provided
 pub fn get_configuration(config: Option<PathBuf>) -> Result<AppConfig, anyhow::Error> {
-    let mut settings = config::Config::default();
+    let mut config_builder = config::Config::builder();
 
     if let Some(config) = config {
         info!("Using configuration from {:?}", config);
-        settings.merge(config::File::with_name(
+
+        config_builder = config_builder.add_source(config::File::with_name(
             config
                 .to_str()
                 .ok_or_else(|| anyhow::anyhow!("Failed to convert path"))?,
-        ))?;
+        ));
     } else {
         info!("Using default configuration");
-        settings
-            .merge(config::File::with_name("configuration/settings"))?
-            .merge(config::File::with_name("configuration/dev_settings"))?;
+        config_builder = config_builder
+            .add_source(config::File::with_name("configuration/settings"))
+            .add_source(config::File::with_name("configuration/dev_settings"));
     }
 
-    settings.merge(config::Environment::with_prefix("APP"))?;
+    config_builder = config_builder.add_source(config::Environment::with_prefix("APP"));
+    let config = config_builder.build()?;
 
-    Ok(settings.try_into()?)
+    Ok(config.try_deserialize::<AppConfig>()?)
 }
 
 #[derive(Deserialize, Debug, Clone)]
