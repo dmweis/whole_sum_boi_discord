@@ -198,3 +198,34 @@ pub struct DiscordMessageToChannel {
     channel_id: u64,
     content: String,
 }
+
+pub struct DiscordChannelShowTypingHandler {
+    discord_http: Arc<Http>,
+}
+
+impl DiscordChannelShowTypingHandler {
+    pub fn new(discord_http: Arc<Http>) -> Box<Self> {
+        Box::new(Self { discord_http })
+    }
+}
+
+#[async_trait]
+impl RouteHandler for DiscordChannelShowTypingHandler {
+    async fn call(&mut self, _topic: &str, content: &[u8]) -> std::result::Result<(), RouterError> {
+        info!("Handling discord send request");
+        let message_data: DiscordShowTypingToChannel =
+            serde_json::from_slice(content).map_err(|err| RouterError::HandlerError(err.into()))?;
+
+        let channel = ChannelId(message_data.channel_id);
+        channel
+            .broadcast_typing(&self.discord_http)
+            .await
+            .map_err(|e| RouterError::HandlerError(e.into()))?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DiscordShowTypingToChannel {
+    channel_id: u64,
+}

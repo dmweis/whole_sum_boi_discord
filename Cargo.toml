@@ -1,50 +1,50 @@
 [package]
-name = "whole_sum_boi_discord"
-description = "Wholesome discord bot"
-version = "0.2.0"
-edition = "2021"
-publish = false
 authors = ["David Weis <dweis7@gmail.com>"]
+description = "Wholesome discord bot"
+edition = "2021"
 license = "MIT OR APACHE"
-repository = "https://github.com/dmweis/whole_sum_boi_discord"
+name = "whole_sum_boi_discord"
+publish = false
 readme = "README.md"
+repository = "https://github.com/dmweis/whole_sum_boi_discord"
+version = "0.2.1"
 
 [package.metadata.deb]
+assets = [
+  [
+    "target/release/whole_sum_boi_discord",
+    "/usr/bin/",
+    "755",
+  ],
+  [
+    "configuration/settings.yaml",
+    "/etc/whole_sum_boi/settings.yaml",
+    "644",
+  ],
+]
+conf-files = ["/etc/whole_sum_boi/settings.yaml"]
 maintainer = "David Weis <dweis7@gmail.com>"
 maintainer-scripts = "debian/"
-conf-files = ["/etc/whole_sum_boi/settings.yaml"]
-assets = [
-    [
-        "target/release/whole_sum_boi_discord",
-        "/usr/bin/",
-        "755",
-    ],
-    [
-        "configuration/settings.yaml",
-        "/etc/whole_sum_boi/settings.yaml",
-        "644",
-    ],
-]
 
 [package.metadata.deb.systemd-units]
 
 [dependencies]
-serenity = { version = "0.11.2", default-features = false, features = [
-    "client",
-    "gateway",
-    "rustls_backend",
-    "model",
-] }
-rumqttc = "0.13.0"
-tokio = { version = "1", features = ["full"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1.0.81"
-simplelog = "0.12"
-log = "0.4"
-config = "0.11"
-thiserror = "1.0"
 anyhow = "1.0"
 async-trait = "0.1"
+config = "0.11"
+log = "0.4"
+mqtt-router = {git = "https://github.com/dmweis/mqtt-router", branch = "main"}
+rumqttc = "0.13.0"
+serde = {version = "1", features = ["derive"]}
+serde_json = "1.0.81"
+serenity = {version = "0.11.2", default-features = false, features = [
+  "client",
+  "gateway",
+  "rustls_backend",
+  "model",
+]}
+simplelog = "0.12"
 structopt = "0.3"
-mqtt-router = { git = "https://github.com/dmweis/mqtt-router", branch = "main" }
+thiserror = "1.0"
+tokio = {version = "1", features = ["full"]}
 # crossbeam = "0.8.1"
