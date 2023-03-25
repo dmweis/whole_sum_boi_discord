@@ -1,7 +1,7 @@
 TARGET_URL ?= homepi.local
 TARGET_HOST ?= pi@$(TARGET_URL)
 REMOTE_DIRECTORY ?= /home/pi
-ARM_BUILD_PATH ?= target/debian/whole_sum_boi_discord_*.deb
+ARM_BUILD_PATH ?= target/debian/whole-sum-boi-discord_*.deb
 
 
 .PHONY: build
