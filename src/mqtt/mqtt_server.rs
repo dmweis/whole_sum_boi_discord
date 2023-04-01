@@ -1,7 +1,10 @@
 use super::routes::{
     DiscordChannelMessageHandler, DoorSensorHandler, MotionSensorHandler, SwitchHandler,
 };
-use crate::{configuration::AppConfig, mqtt::routes::DiscordChannelShowTypingHandler};
+use crate::{
+    configuration::AppConfig,
+    mqtt::routes::{DiscordChannelFileMessageHandler, DiscordChannelShowTypingHandler},
+};
 use log::*;
 use mqtt_router::Router;
 use rumqttc::{AsyncClient, ConnAck, Event, Incoming, MqttOptions, Publish, QoS, SubscribeFilter};
@@ -107,6 +110,13 @@ pub fn start_mqtt_service(
             .add_handler(
                 &format!("{base_topic}/say_channel"),
                 DiscordChannelMessageHandler::new(discord_http.clone()),
+            )
+            .unwrap();
+
+        router
+            .add_handler(
+                &format!("{base_topic}/send_file_channel"),
+                DiscordChannelFileMessageHandler::new(discord_http.clone()),
             )
             .unwrap();
 
