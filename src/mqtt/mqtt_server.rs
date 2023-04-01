@@ -14,6 +14,8 @@ use serenity::model::channel::Message;
 use std::{sync::Arc, time::Duration};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
+const MQTT_MAX_PACKET_SIZE: usize = 268435455;
+
 enum MqttUpdate {
     Message(Publish),
     Reconnection(ConnAck),
@@ -29,8 +31,9 @@ pub fn start_mqtt_service(
         &app_config.mqtt.broker_host,
         app_config.mqtt.broker_port,
     );
-    info!("Starting MQTT server with options {:?}", mqttoptions);
     mqttoptions.set_keep_alive(Duration::from_secs(5));
+    mqttoptions.set_max_packet_size(MQTT_MAX_PACKET_SIZE, MQTT_MAX_PACKET_SIZE);
+    info!("Starting MQTT server with options {:?}", mqttoptions);
 
     let (client, mut eventloop) = AsyncClient::new(mqttoptions, 10);
 

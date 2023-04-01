@@ -1827,7 +1827,7 @@ dependencies = [
 
 [[package]]
 name = "whole_sum_boi_discord"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "anyhow",
  "async-trait",
