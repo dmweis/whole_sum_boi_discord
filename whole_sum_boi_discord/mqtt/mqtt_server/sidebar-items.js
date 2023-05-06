@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["MQTT_MAX_PACKET_SIZE"],"enum":["MqttUpdate"],"fn":["start_mqtt_service"],"struct":["MessageAttachment","ReceivedDiscordMessage"]};

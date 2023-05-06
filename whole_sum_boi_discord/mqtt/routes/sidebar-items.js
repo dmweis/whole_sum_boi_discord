@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Action"],"struct":["DiscordChannelFileMessageHandler","DiscordChannelMessageHandler","DiscordChannelShowTypingHandler","DiscordFileMessageToChannel","DiscordMessageToChannel","DiscordShowTypingToChannel","DoorSensor","DoorSensorHandler","FileAttachment","MotionSensorData","MotionSensorHandler","SwitchHandler","SwitchPayload"]};

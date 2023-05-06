@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["whole_sum_boi_discord"];
