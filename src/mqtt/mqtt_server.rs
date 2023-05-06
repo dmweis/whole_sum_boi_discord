@@ -9,8 +9,8 @@ use log::*;
 use mqtt_router::Router;
 use rumqttc::{AsyncClient, ConnAck, Event, Incoming, MqttOptions, Publish, QoS, SubscribeFilter};
 use serde::Serialize;
-use serenity::http::Http;
 use serenity::model::channel::Message;
+use serenity::{http::Http, model::prelude::Attachment};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver};
 
@@ -24,7 +24,7 @@ enum MqttUpdate {
 pub fn start_mqtt_service(
     app_config: AppConfig,
     discord_http: Arc<Http>,
-    mut message_receiver: UnboundedReceiver<Message>,
+    mut discord_message_receiver: UnboundedReceiver<Message>,
 ) -> anyhow::Result<()> {
     let mut mqttoptions = MqttOptions::new(
         &app_config.mqtt.client_id,
@@ -43,15 +43,32 @@ pub fn start_mqtt_service(
 
     tokio::spawn({
         let mqtt_client = client.clone();
-        let topic = format!("{base_topic}/new_message/v1");
+        let topic_v1 = format!("{base_topic}/new_message/v1");
+        let topic_serenity_format_v1 = format!("{base_topic}/new_message/serenity_format/v1");
         async move {
             loop {
-                let message = message_receiver.recv().await.unwrap();
-                let mqtt_payload: ReceivedDiscordMessage = message.into();
+                let message = discord_message_receiver.recv().await.unwrap();
+                // send using my own converted message format
+                let mqtt_payload: ReceivedDiscordMessage = message.clone().into();
                 let json =
                     serde_json::to_string(&mqtt_payload).expect("Failed to serialize message");
                 if let Err(e) = mqtt_client
-                    .publish(&topic, QoS::AtMostOnce, false, json)
+                    .publish(&topic_v1, QoS::AtMostOnce, false, json)
+                    .await
+                {
+                    error!("Failed sending mqtt message {e}");
+                }
+
+                // send using the serenity message format
+                let serenity_format_json =
+                    serde_json::to_string(&message).expect("Failed to serialize message");
+                if let Err(e) = mqtt_client
+                    .publish(
+                        &topic_serenity_format_v1,
+                        QoS::AtMostOnce,
+                        false,
+                        serenity_format_json,
+                    )
                     .await
                 {
                     error!("Failed sending mqtt message {e}");
@@ -176,6 +193,7 @@ struct ReceivedDiscordMessage {
     is_author_bot: bool,
     channel_id: u64,
     content: String,
+    attachments: Vec<MessageAttachment>,
 }
 
 impl From<Message> for ReceivedDiscordMessage {
@@ -186,6 +204,40 @@ impl From<Message> for ReceivedDiscordMessage {
             is_author_bot: message.author.bot,
             channel_id: message.channel_id.0,
             content: message.content,
+            attachments: message
+                .attachments
+                .into_iter()
+                .map(MessageAttachment::from)
+                .collect(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct MessageAttachment {
+    id: u64,
+    filename: String,
+    height: Option<u64>,
+    proxy_url: String,
+    size: u64,
+    url: String,
+    width: Option<u64>,
+    content_type: Option<String>,
+    ephemeral: bool,
+}
+
+impl From<Attachment> for MessageAttachment {
+    fn from(attachment: Attachment) -> Self {
+        Self {
+            id: attachment.id.0,
+            filename: attachment.filename,
+            height: attachment.height,
+            proxy_url: attachment.proxy_url,
+            size: attachment.size,
+            url: attachment.url,
+            width: attachment.width,
+            content_type: attachment.content_type,
+            ephemeral: attachment.ephemeral,
         }
     }
 }
